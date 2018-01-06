@@ -1,0 +1,73 @@
+<template>
+  <div>
+    <h1>Instrument</h1>
+    <div
+      @mousedown="playSound(event, 440)"
+      @mouseout="stopSound(event, 440)"
+      @mouseup="stopSound(event, 440)">
+      beep A
+    </div>
+    <div
+      @mousedown="playSound(event, 660)"
+      @mouseout="stopSound(event, 660)"
+      @mouseup="stopSound(event, 660)">
+      beep B
+    </div>
+  </div>
+</template>
+<script>
+import { AudioContext } from 'standardized-audio-context'
+
+export default {
+  data: function () {
+    return {
+      audioContext: null,
+      oscillators: null
+    }
+  },
+  created: function () {
+    this.audioContext = new AudioContext()
+    this.oscillators = {}
+  },
+  name: 'Instrument',
+  methods: {
+    playSound: function (event, freq) {
+      const freqKey = freq.toString()
+      this.oscillators[freqKey] = this.audioContext.createOscillator()
+      this.oscillators[freqKey].frequency.setValueAtTime(freq, this.audioContext.currentTime)
+      this.oscillators[freqKey].connect(this.audioContext.destination)
+      this.oscillators[freqKey].start()
+    },
+    stopSound: function (event, freq) {
+      const freqKey = freq.toString()
+      if(this.oscillators[freqKey]) {
+        this.oscillators[freqKey].stop()
+        this.oscillators[freqKey] = null
+      }
+    }
+  },
+  data () {
+    return {
+      msg: 'Blow in your mic'
+    }
+  }
+}
+</script>
+
+<!-- Add "scoped" attribute to limit CSS to this component only -->
+<style scoped>
+h1, h2 {
+  font-weight: normal;
+}
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+li {
+  display: inline-block;
+  margin: 0 10px;
+}
+a {
+  color: #42b983;
+}
+</style>
