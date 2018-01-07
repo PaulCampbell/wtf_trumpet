@@ -21,6 +21,7 @@
     "vue": "vue/dist/vue.common.js"
   },
   "dependencies": {
+    "getusermedia": "^2.0.1",
     "standardized-audio-context": "^11.0.2",
     "vue": "^2.0.1"
   },

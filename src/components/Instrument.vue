@@ -14,53 +14,95 @@
     <div v-on:touchstart="playSound(880)"
       v-on:touchend="stopSound(880)"
       class="noteButton">
-      beep B
+      beep C
     </div>
     {{msg}}
-    <input type="range" min="0" max="1" step="0.02" v-model="volume">
-    volume
-    </input>
+    {{this.err}}
+    {{this.volume}}
   </div>
 </template>
 
 <script>
-import { AudioContext } from 'standardized-audio-context'
 import sineGenerator from '../instruments/sine'
+const AudioContext = window.AudioContext || window.webkitAudioContext;
 
 export default {
   data: function () {
     return {
       audioContext: null,
+      volumeProcessingAudioContext: null,
       sounds: null,
-      volume: null
+      volume: 0,
+      volumeProcessingStarted: false,
+      msg: 'start message',
+      err: 'no error'
     }
   },
   created: function () {
     this.audioContext = new AudioContext()
     this.sounds = {}
-    this.volume = 0.5
+    this.setupVolumeProcessing()
   },
   name: 'Instrument',
   methods: {
+    setupVolumeProcessing: function() {
+      this.msg = 'settingup'
+      navigator.mediaDevices.getUserMedia({
+        video: false,
+        audio: true
+      }).then(stream => {
+        this.msg = 'settingup: got strem'
+        this.volumeProcessingAudioContext = new AudioContext()
+        const mediaStreamSource = this.volumeProcessingAudioContext.createMediaStreamSource(stream)
+        var processor = this.volumeProcessingAudioContext.createScriptProcessor(512)
+        mediaStreamSource.connect(processor)
+        processor.onaudioprocess = this.volumeAudioProcess
+        processor.connect(this.volumeProcessingAudioContext.destination)
+      }).catch(err => this.err = err)
+    },
+    volumeAudioProcess: function (event) {
+      this.err = 'asd'
+      var buf = event.inputBuffer.getChannelData(0);
+      var bufLength = buf.length;
+      var sum = 0;
+      var x;
+      var clipLevel = clipLevel || 0.98
+      var averaging = averaging || 0.95
+      var clipping, lastClip
+
+      for (var i=0; i< bufLength; i++) {
+        x = buf[i];
+        if (Math.abs(x) >= clipLevel) {
+          clipping = true;
+          lastClip = window.performance.now();
+        }
+        sum += x * x;
+      }
+
+      var rms =  Math.sqrt(sum / bufLength);
+      const vol = Math.max(rms, this.volume*averaging)
+      if(!isNaN(vol)) {
+        this.volume = Math.max(rms, this.volume*averaging)
+        Object.keys(this.sounds).forEach(k => {
+          if(this.sounds[k]) {
+            this.sounds[k].gain.gain.value = this.volume
+          }
+        })
+      }
+    },
     playSound: function (freq) {
+      this.volumeProcessingAudioContext.resume()
       const freqKey = freq.toString()
       this.sounds[freqKey] = sineGenerator(freq, this.audioContext)
       this.sounds[freqKey].gain.gain.value = this.volume
       this.sounds[freqKey].oscillator.start()
-      this.msg = `${freq} start`
     },
     stopSound: function (freq) {
       const freqKey = freq.toString()
       if(this.sounds[freqKey]) {
         this.sounds[freqKey].oscillator.stop()
         this.sounds[freqKey] = null
-        this.msg = `${freq} stop`
       }
-    }
-  },
-  data () {
-    return {
-      msg: 'Hold a key and blow into the phone mic'
     }
   }
 }
