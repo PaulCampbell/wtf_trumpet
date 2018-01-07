@@ -17,32 +17,34 @@
 </template>
 <script>
 import { AudioContext } from 'standardized-audio-context'
+import sineGenerator from '../instruments/sine'
 
 export default {
   data: function () {
     return {
       audioContext: null,
-      oscillators: null
+      sounds: null,
+      volume: null
     }
   },
   created: function () {
     this.audioContext = new AudioContext()
-    this.oscillators = {}
+    this.sounds = {}
+    this.volume = 1
   },
   name: 'Instrument',
   methods: {
     playSound: function (event, freq) {
       const freqKey = freq.toString()
-      this.oscillators[freqKey] = this.audioContext.createOscillator()
-      this.oscillators[freqKey].frequency.setValueAtTime(freq, this.audioContext.currentTime)
-      this.oscillators[freqKey].connect(this.audioContext.destination)
-      this.oscillators[freqKey].start()
+      this.sounds[freqKey] = sineGenerator(freq, this.audioContext)
+      this.sounds[freqKey].gain.gain.value = this.volume
+      this.sounds[freqKey].oscillator.start()
     },
     stopSound: function (event, freq) {
       const freqKey = freq.toString()
-      if(this.oscillators[freqKey]) {
-        this.oscillators[freqKey].stop()
-        this.oscillators[freqKey] = null
+      if(this.sounds[freqKey]) {
+        this.sounds[freqKey].oscillator.stop()
+        this.sounds[freqKey] = null
       }
     }
   },
