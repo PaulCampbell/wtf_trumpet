@@ -1,21 +1,28 @@
 <template>
   <div>
     <h1>Instrument</h1>
-    <div
-      @mousedown="playSound(event, 440)"
-      @mouseout="stopSound(event, 440)"
-      @mouseup="stopSound(event, 440)">
+    <div v-on:touchstart="playSound(440)"
+      v-on:touchend="stopSound(440)"
+      class="noteButton">
       beep A
     </div>
-    <div
-      @mousedown="playSound(event, 660)"
-      @mouseout="stopSound(event, 660)"
-      @mouseup="stopSound(event, 660)">
+    <div v-on:touchstart="playSound(660)"
+      v-on:touchend="stopSound(660)"
+      class="noteButton">
       beep B
     </div>
-    <input type="range" min="0" max="1" step="0.02" v-model="volume"></input>
+    <div v-on:touchstart="playSound(880)"
+      v-on:touchend="stopSound(880)"
+      class="noteButton">
+      beep B
+    </div>
+    {{msg}}
+    <input type="range" min="0" max="1" step="0.02" v-model="volume">
+    volume
+    </input>
   </div>
 </template>
+
 <script>
 import { AudioContext } from 'standardized-audio-context'
 import sineGenerator from '../instruments/sine'
@@ -35,23 +42,25 @@ export default {
   },
   name: 'Instrument',
   methods: {
-    playSound: function (event, freq) {
+    playSound: function (freq) {
       const freqKey = freq.toString()
       this.sounds[freqKey] = sineGenerator(freq, this.audioContext)
       this.sounds[freqKey].gain.gain.value = this.volume
       this.sounds[freqKey].oscillator.start()
+      this.msg = `${freq} start`
     },
-    stopSound: function (event, freq) {
+    stopSound: function (freq) {
       const freqKey = freq.toString()
       if(this.sounds[freqKey]) {
         this.sounds[freqKey].oscillator.stop()
         this.sounds[freqKey] = null
+        this.msg = `${freq} stop`
       }
     }
   },
   data () {
     return {
-      msg: 'Blow in your mic'
+      msg: 'Hold a key and blow into the phone mic'
     }
   }
 }
@@ -72,5 +81,11 @@ li {
 }
 a {
   color: #42b983;
+}
+.noteButton {
+  border:solid 1px red;
+  padding:1.5em;
+  user-select: none;
+  -webkit-user-select: none;
 }
 </style>
