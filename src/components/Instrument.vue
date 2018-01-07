@@ -13,6 +13,7 @@
       @mouseup="stopSound(event, 660)">
       beep B
     </div>
+    <input type="range" min="0" max="1" step="0.02" v-model="volume"></input>
   </div>
 </template>
 <script>
@@ -30,7 +31,7 @@ export default {
   created: function () {
     this.audioContext = new AudioContext()
     this.sounds = {}
-    this.volume = 1
+    this.volume = 0.5
   },
   name: 'Instrument',
   methods: {
